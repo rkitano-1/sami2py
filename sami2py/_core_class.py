@@ -174,7 +174,27 @@ class Model(object):
         nf = 98
         nz = 101
         ni = 7
-
+        
+        def return_fourier(x, coeffs):
+            """
+            Returns a Fourier series up to NumF coefficients
+            """
+            def cos_a(x, n):
+                """simple cosine"""
+                return np.cos(n * np.pi * x / 12.0)
+        
+            def sin_a(x, n):
+                """simple sine"""
+                return np.sin(n * np.pi * x / 12.0)
+        
+            NumF = int((len(coeffs) - 1)/2)
+        
+            y = coeffs[0]
+            for i in range(1, NumF+1):
+                y = y + coeffs[2*i-1]*cos_a(x, i) + coeffs[2*i]*sin_a(x, i)
+        
+            return y
+        
         model_path = generate_path(self.tag, self.lon0, self.year, self.day,
                                    self.test)
 
@@ -260,6 +280,11 @@ class Model(object):
             self.data['denn'] = (('z', 'f', 'ion', 'ut'), denn)
             u4 = np.reshape(u4, (nz, nf, nt), order="F")
             self.data['u4'] = (('z', 'f', 'ut'), u4)
+        
+        # Add drifts
+        if self.MetaData['ExB model'] == 'Fourier Series': 
+            self.data['ExB'] = return_fourier(self.data['slt'],
+                                              self.MetaData['Fourier Coeffs'])
 
     def _generate_metadata(self, namelist):
         """Reads the namelist and generates MetaData based on Parameters
